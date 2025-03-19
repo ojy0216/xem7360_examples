@@ -49,7 +49,7 @@ This repository contains a collection of example projects for the Opal Kelly XEM
 
 1. Clone this repository:
    ```
-   git clone https://github.com/yourusername/xem7360_examples.git
+   git clone https://github.com/ojy0216/xem7360_examples.git
    cd xem7360_examples
    ```
 
