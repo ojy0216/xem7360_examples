@@ -2,7 +2,7 @@ import numpy as np
 from mms_ok import XEM7360
 
 def main():
-    bitstream_path = r"../../bitstream/trigger_example.bit"
+    bitstream_path = r"../../bitstream/trigger_example_new.bit"
 
     with XEM7360(bitstream_path=bitstream_path) as fpga:
         fpga.reset()

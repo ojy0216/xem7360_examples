@@ -52,15 +52,11 @@ reg [128 - 1:0] pipeout_data;
 always @(posedge okClk) begin
     if(!rstn) begin
         data_store <= 128'b0;
-        store_idx <= 2'b0;
+        store_idx <= 2'd3;
     end
     else if(pipein80_valid) begin
-        store_idx <= store_idx + 1'b1;
-        data_store[32 * store_idx +: 32] <= pipein80_wire;  // [15, 14, ..., 2, 1, 0]
-    end
-
-    if(store_idx == 2'b11) begin
-        store_idx <= 2'b0;
+        store_idx <= store_idx - 1'b1;
+        data_store[32 * store_idx +: 32] <= pipein80_wire;
     end
 end
 
@@ -75,16 +71,12 @@ end
 
 always @(posedge okClk) begin
     if(!rstn) begin
-        read_idx <= 2'b0;
+        read_idx <= 2'd3;
         pipeoutA0_wire <= 32'b0;
     end
     else if(pipeoutA0_read) begin
-        read_idx <= read_idx + 1'b1;
+        read_idx <= read_idx - 1'b1;
         pipeoutA0_wire <= pipeout_data[32 * read_idx +: 32];
-    end
-
-    if(read_idx == 2'b11) begin
-        read_idx <= 2'b0;
     end
 end
 
