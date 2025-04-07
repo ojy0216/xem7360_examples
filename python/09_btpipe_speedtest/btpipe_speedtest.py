@@ -1,7 +1,7 @@
-from time import sleep, perf_counter_ns
 from secrets import token_hex
-from mms_ok import XEM7360
+from time import perf_counter_ns, sleep
 
+from mms_ok import XEM7360
 from rich.console import Console
 from rich.panel import Panel
 from rich.progress import (
@@ -16,6 +16,7 @@ from rich.table import Table
 
 console = Console()
 
+
 def format_bytes(bytes):
     if bytes < 1024:
         return f"{bytes} B"
@@ -24,8 +25,9 @@ def format_bytes(bytes):
     elif bytes < 1024 * 1024 * 1024:
         return f"{bytes / 1024 / 1024:.2f} MB"
 
+
 def write_test(fpga, num_transfer):
-    data = [token_hex(nbytes=(128//8)) for _ in range(num_transfer)]
+    data = [token_hex(nbytes=(128 // 8)) for _ in range(num_transfer)]
 
     total_bytes = 0
 
@@ -60,13 +62,14 @@ def write_test(fpga, num_transfer):
 
     return transfer_rate
 
+
 def bulk_write_test(fpga, num_bytes):
     data = token_hex(nbytes=num_bytes)
     start = perf_counter_ns()
 
     with console.status("[bold green]Performing bulk write...") as status:
         transfer_byte = fpga.WriteToBlockPipeIn(0x80, data, reorder_str=True)
-    
+
     end = perf_counter_ns()
     duration = end - start
     transfer_rate = transfer_byte / duration * 1e9
@@ -77,6 +80,7 @@ def bulk_write_test(fpga, num_bytes):
     print()
 
     return transfer_rate
+
 
 def read_test(fpga, num_transfer):
     total_bytes = 0
@@ -93,7 +97,7 @@ def read_test(fpga, num_transfer):
     ) as progress:
         task = progress.add_task("Reading...", total=num_transfer, speed="")
         for _ in range(num_transfer):
-            read_data = fpga.ReadFromBlockPipeOut(0xA0, 128//8, reorder_str=True)
+            read_data = fpga.ReadFromBlockPipeOut(0xA0, 128 // 8, reorder_str=True)
             total_bytes += read_data.transfer_byte
             progress.advance(task)
             # Update transfer rate in progress description
@@ -112,6 +116,7 @@ def read_test(fpga, num_transfer):
 
     return transfer_rate
 
+
 def bulk_read_test(fpga, num_bytes):
     start = perf_counter_ns()
 
@@ -128,6 +133,7 @@ def bulk_read_test(fpga, num_bytes):
     print()
 
     return transfer_rate
+
 
 def main():
     bitstream_path = r"../../bitstream/btpipe_speedtest.bit"
@@ -209,6 +215,7 @@ def main():
 
     # np.save(f"bulk_write_rates_{format_bytes(num_bytes)}.npy", np.array(bulk_write_rates))
     # np.save(f"bulk_read_rates_{format_bytes(num_bytes)}.npy", np.array(bulk_read_rates))
-    
+
+
 if __name__ == "__main__":
     main()

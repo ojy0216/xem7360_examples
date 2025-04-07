@@ -1,7 +1,9 @@
-import time
-import numpy as np
 import secrets
+import time
+
+import numpy as np
 from bitslice import Bitslice
+from mms_ok import XEM7360
 from rich.console import Console
 from rich.progress import (
     BarColumn,
@@ -11,13 +13,12 @@ from rich.progress import (
     TextColumn,
     TimeRemainingColumn,
     TransferSpeedColumn,
-    track
+    track,
 )
 from rich.table import Table
 
-from mms_ok import XEM7360
-
 console = Console()
+
 
 def format_bytes(bytes):
     if bytes < 1024:
@@ -29,18 +30,20 @@ def format_bytes(bytes):
     else:
         return f"{bytes / 1024 / 1024 / 1024:.2f} GiB"
 
+
 def pack_dram_inst(is_dram: bool, is_read: bool, dram_addr: int, dram_wr_data: str):
     inst = Bitslice(value=0, size=256)
 
     if is_read:
-        inst[128 - 1:0] = 0
+        inst[128 - 1 : 0] = 0
     else:
-        inst[128 - 1:0] = int(dram_wr_data, 16)
-    inst[155 - 1:128] = dram_addr
+        inst[128 - 1 : 0] = int(dram_wr_data, 16)
+    inst[155 - 1 : 128] = dram_addr
     inst[155] = int(is_read)
     inst[156] = int(is_dram)
 
     return format(inst.value, f"0{256//4}X")
+
 
 def main(num_addr, sequential=True):
     bitstream_path = r"../../bitstream/my_ddr_test.bit"
@@ -48,8 +51,8 @@ def main(num_addr, sequential=True):
     """ DATA GEN """
     data_dict = {}
     for addr in range(num_addr):
-        data_dict[addr] = secrets.token_hex(nbytes=(128//8)).upper()
-    
+        data_dict[addr] = secrets.token_hex(nbytes=(128 // 8)).upper()
+
     with XEM7360(bitstream_path=bitstream_path) as fpga:
         fpga.reset()
 
@@ -76,27 +79,24 @@ def main(num_addr, sequential=True):
 
             for addr, data in data_dict.items():
                 inst = pack_dram_inst(
-                    is_dram=True,
-                    is_read=False,
-                    dram_addr=addr,
-                    dram_wr_data=data
+                    is_dram=True, is_read=False, dram_addr=addr, dram_wr_data=data
                 )
                 fpga.WriteToBlockPipeIn(ep_addr=0x80, data=inst)
 
                 # Update progress and calculate transfer rate
                 total_bytes += 32  # 256 bites = 32 bytes per transfer
                 progress.update(task, completed=total_bytes)
-        
+
         write_duration = time.perf_counter_ns() - start_time
         write_rate = (total_bytes / write_duration) * 1e9
-        
+
         """ DRAM READ """
         len_addr = len(str(num_addr))
 
         read_addr = list(range(num_addr))
         if not sequential:
             np.random.shuffle(read_addr)
-        
+
         dram_correct = 0
         start_time = time.perf_counter_ns()
         total_bytes = 0
@@ -117,25 +117,22 @@ def main(num_addr, sequential=True):
 
             for addr in read_addr:
                 inst = pack_dram_inst(
-                    is_dram=True,
-                    is_read=True,
-                    dram_addr=addr,
-                    dram_wr_data=None
+                    is_dram=True, is_read=True, dram_addr=addr, dram_wr_data=None
                 )
                 fpga.WriteToBlockPipeIn(ep_addr=0x80, data=inst)
 
-                read_data = fpga.ReadFromBlockPipeOut(ep_addr=0xA0, data=128//8)
+                read_data = fpga.ReadFromBlockPipeOut(ep_addr=0xA0, data=128 // 8)
 
                 if data_dict[addr] == read_data:
                     dram_correct += 1
                 else:
                     print(f"DRAM ADDR [{addr:{len_addr}}] FAILED")
                     print(f"Read: {read_data} | Answer: {data_dict[addr]}\n")
-                
+
                 # Update progress and calculate transfer rate
                 total_bytes += 16  # 128 bits = 16 bytes per transfer
                 progress.update(task, completed=total_bytes)
-        
+
         read_duration = time.perf_counter_ns()
         read_rate = (total_bytes / read_duration) * 1e9
 

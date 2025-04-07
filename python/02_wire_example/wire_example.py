@@ -1,6 +1,7 @@
 import numpy as np
 from mms_ok import XEM7360
 
+
 def main():
     bitstream_path = r"../../bitstream/wire_example.bit"
 
@@ -9,7 +10,7 @@ def main():
         data1 = np.random.randint(0, 2**4)
 
         OP_AND = 0
-        OP_OR  = 1
+        OP_OR = 1
 
         op_select = OP_AND
 
@@ -19,7 +20,7 @@ def main():
         print(f"data0     : {np.binary_repr(data0, width=4)}")
         print(f"data1     : {np.binary_repr(data1, width=4)}")
         print(f"op        : {'OR' if op_select == OP_OR else 'AND'}")
-        print(f'op_result : {np.binary_repr(op_result, width=4)}')
+        print(f"op_result : {np.binary_repr(op_result, width=4)}")
 
         fpga.SetWireInValue(0x00, data0)
         fpga.SetWireInValue(0x01, data1)
@@ -32,6 +33,7 @@ def main():
         print(f"OR  result: {np.binary_repr(or_result, width=4)}")
         print(f"AND result: {np.binary_repr(and_result, width=4)}")
         print()
+
 
 if __name__ == "__main__":
     main()
